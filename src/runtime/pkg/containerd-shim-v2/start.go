@@ -74,7 +74,8 @@ func startContainer(ctx context.Context, s *service, c *container) (retErr error
 		return err
 	}
 
-	c.stdinPipe = stdin
+	// TODO: moved to pointer
+	c.stdinPipe = &stdin
 
 	if c.stdin != "" || c.stdout != "" || c.stderr != "" {
 		tty, err := newTtyIO(ctx, s.namespace, c.id, c.stdin, c.stdout, c.stderr, c.terminal)
