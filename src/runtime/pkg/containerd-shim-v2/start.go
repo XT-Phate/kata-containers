@@ -75,7 +75,7 @@ func startContainer(ctx context.Context, s *service, c *container) (retErr error
 	}
 
 	// TODO: moved to pointer
-	c.stdinPipe = &stdin
+	c.stdinPipe = stdin
 
 	if c.stdin != "" || c.stdout != "" || c.stderr != "" {
 		tty, err := newTtyIO(ctx, s.namespace, c.id, c.stdin, c.stdout, c.stderr, c.terminal)
@@ -143,7 +143,7 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 		return nil, err
 	}
 
-	execs.stdinPipe = &stdin
+	execs.stdinPipe = stdin
 
 	tty, err := newTtyIO(ctx, s.namespace, execs.id, execs.tty.stdin, execs.tty.stdout, execs.tty.stderr, execs.tty.terminal)
 	if err != nil {
@@ -154,7 +154,7 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 	go ioCopy(shimLog.WithFields(logrus.Fields{
 		"container": c.id,
 		"exec":      execID,
-	}), execs.exitIOch, execs.stdinCloser, tty, stdin, stdout, stderr)
+	}), execs.exitIOch, execs.stdinCloser, tty, execs.stdinPipe, stdout, stderr)
 
 	go wait(ctx, s, c, execID)
 

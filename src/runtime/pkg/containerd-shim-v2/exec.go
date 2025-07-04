@@ -25,7 +25,7 @@ type exec struct {
 	tty       *tty
 	ttyio     *ttyIO
 
-	stdinPipe *io.WriteCloser
+	stdinPipe io.WriteCloser
 
 	exitTime time.Time
 

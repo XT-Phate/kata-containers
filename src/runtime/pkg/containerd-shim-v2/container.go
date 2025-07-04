@@ -24,7 +24,7 @@ type container struct {
 	exitTime    time.Time
 	execs       map[string]*exec
 	exitIOch    chan struct{}
-	stdinPipe   *io.WriteCloser
+	stdinPipe   io.WriteCloser
 	stdinCloser chan struct{}
 	exitCh      chan uint32
 	id          string
