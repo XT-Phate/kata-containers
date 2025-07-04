@@ -150,7 +150,7 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 		return nil, err
 	}
 	execs.ttyio = tty
-
+	shimLog.Error("IOCOPY STARTED")
 	go ioCopy(shimLog.WithFields(logrus.Fields{
 		"container": c.id,
 		"exec":      execID,
@@ -158,5 +158,6 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 
 	go wait(ctx, s, c, execID)
 
+	shimLog.Error("WAIT IS OVER")
 	return execs, nil
 }
