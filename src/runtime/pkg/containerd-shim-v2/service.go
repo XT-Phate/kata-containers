@@ -570,8 +570,8 @@ func (s *service) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (_ *task
 
 // Exec an additional process inside the container
 func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *emptypb.Empty, err error) {
-	shimLog.WithField("container", r.ID).Debug("Exec() start")
-	defer shimLog.WithField("container", r.ID).Debug("Exec() end")
+	shimLog.WithField("container", r.ID).Info("Exec() start")
+	defer shimLog.WithField("container", r.ID).Info("Exec() end")
 	span, _ := katatrace.Trace(s.rootCtx, shimLog, "Exec", shimTracingTags)
 	defer span.End()
 
