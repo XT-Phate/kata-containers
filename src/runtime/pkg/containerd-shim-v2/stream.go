@@ -111,14 +111,14 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			shimLog.Error("stdin io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
-			// io.CopyBuffer(stdinPipe, tty.io.Stdin(), *p)
+			_, err := io.CopyBuffer(stdinPipe, tty.io.Stdin(), *p)
 			// shimLog.Error("STDIN COPY BUFFER OVER")
-			_, err := io.Copy(stdinPipe, tty.io.Stdin())
 
 			if err != nil {
 				shimLog.Errorf("STDIN COPY BUFFER OVER", err.Error())
 			}
 			// notify that we can close process's io safely.
+			shimLog.Error("Printing STDIN bytes %s", *p)
 			close(stdinCloser)
 			wg.Done()
 			shimLog.Error("stdin io stream copy exited")
@@ -132,8 +132,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			shimLog.Error("stdout io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
-			//io.CopyBuffer(tty.io.Stdout(), stdoutPipe, *p)
-			_, err := io.Copy(tty.io.Stdout(), stdoutPipe)
+			_, err := io.CopyBuffer(tty.io.Stdout(), stdoutPipe, *p)
 			if err != nil {
 				shimLog.Errorf("STDOUT COPY BUFFER OVER", err.Error())
 			}
@@ -141,6 +140,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			// 	// close stdin to make the other routine stop
 			// 	tty.io.Stdin().Close()
 			// }
+			shimLog.Error("Printing OUT bytes %s", *p)
 			wg.Done()
 			shimLog.Error("stdout io stream copy exited")
 		}()
@@ -152,12 +152,11 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			shimLog.Error("stderr io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
-			// io.CopyBuffer(tty.io.Stderr(), stderrPipe, *p)
-			_, err := io.Copy(tty.io.Stderr(), stderrPipe) // copy stdout to stderr
-
+			_, err := io.CopyBuffer(tty.io.Stderr(), stderrPipe, *p)
 			if err != nil {
 				shimLog.Errorf("STDERR COPY BUFFER OVER : ", err.Error())
 			}
+			shimLog.Error("Printing ERR bytes %s", *p)
 			wg.Done()
 			shimLog.Error("stderr io stream copy exited")
 		}()
