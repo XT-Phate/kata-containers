@@ -103,14 +103,16 @@ func newTtyIO(ctx context.Context, ns, id, stdin, stdout, stderr string, console
 
 func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO, stdinPipe io.WriteCloser, stdoutPipe, stderrPipe io.Reader) {
 	var wg sync.WaitGroup
-
+	shimLog.Warn("IO COPY STARTED")
 	if tty.io.Stdin() != nil {
+		shimLog.Warn("STDIN BUFFER IS TRUE")
 		wg.Add(1)
 		go func() {
 			shimLog.Warn("stdin io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 			io.CopyBuffer(stdinPipe, tty.io.Stdin(), *p)
+			shimLog.Warn("STDIN COPY BUFFER OVER")
 			// notify that we can close process's io safely.
 			close(stdinCloser)
 			wg.Done()
@@ -126,10 +128,11 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 			io.CopyBuffer(tty.io.Stdout(), stdoutPipe, *p)
-			if tty.io.Stdin() != nil {
-				// close stdin to make the other routine stop
-				tty.io.Stdin().Close()
-			}
+			shimLog.Warn("STDOUT COPY BUFFER OVER")
+			// if tty.io.Stdin() != nil {
+			// 	// close stdin to make the other routine stop
+			// 	tty.io.Stdin().Close()
+			// }
 			wg.Done()
 			shimLog.Warn("stdout io stream copy exited")
 		}()
@@ -142,6 +145,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 			io.CopyBuffer(tty.io.Stderr(), stderrPipe, *p)
+			shimLog.Warn("STDIN COPY BUFFER OVER")
 			wg.Done()
 			shimLog.Warn("stderr io stream copy exited")
 		}()
