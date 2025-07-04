@@ -17,6 +17,7 @@ import (
 
 func startContainer(ctx context.Context, s *service, c *container) (retErr error) {
 	shimLog.WithField("container", c.id).Debug("start container")
+	shimLog.WithField("container", c.id).Info("TEST start container")
 	defer func() {
 		if retErr != nil {
 			// notify the wait goroutine to continue
