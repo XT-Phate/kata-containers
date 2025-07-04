@@ -16,7 +16,7 @@ import (
 )
 
 func startContainer(ctx context.Context, s *service, c *container) (retErr error) {
-	shimLog.WithField("container", c.id).Debug("start container")
+	shimLog.WithField("container", c.id).Info("start container")
 	shimLog.WithField("container", c.id).Info("TEST start container")
 	defer func() {
 		if retErr != nil {
@@ -66,7 +66,7 @@ func startContainer(ctx context.Context, s *service, c *container) (retErr error
 		// https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle
 		shimLog.WithError(err).Warn("Failed to run post-start hooks")
 	}
-
+	shimLog.WithError(err).Warn("TOTOTO")
 	c.status = task.Status_RUNNING
 
 	stdin, stdout, stderr, err := s.sandbox.IOStream(c.id, c.id)
@@ -102,7 +102,7 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 	shimLog.WithFields(logrus.Fields{
 		"container": containerID,
 		"exec":      execID,
-	}).Debug("start container execution")
+	}).Info("start container execution")
 	// start an exec
 	c, err := s.getContainer(containerID)
 	if err != nil {

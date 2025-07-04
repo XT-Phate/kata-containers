@@ -393,7 +393,7 @@ func configureNonRootHypervisor(runtimeConfig *oci.RuntimeConfig, sandboxId stri
 		"uid":        uid,
 		"gid":        gid,
 		"sandbox_id": sandboxId,
-	}).Debug("successfully created a non root user for the hypervisor")
+	}).Info("successfully created a non root user for the hypervisor")
 
 	userTmpDir := path.Join("/run/user/", fmt.Sprint(uid))
 	_, err = os.Stat(userTmpDir)

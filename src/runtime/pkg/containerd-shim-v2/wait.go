@@ -30,7 +30,7 @@ func wait(ctx context.Context, s *service, c *container, execID string) (int32, 
 	if execID == "" {
 		//wait until the io closed, then wait the container
 		<-c.exitIOch
-		shimLog.WithField("container", c.id).Debug("The container io streams closed")
+		shimLog.WithField("container", c.id).Info("The container io streams closed")
 	} else {
 		execs, err = c.getExec(execID)
 		if err != nil {
@@ -40,7 +40,7 @@ func wait(ctx context.Context, s *service, c *container, execID string) (int32, 
 		shimLog.WithFields(logrus.Fields{
 			"container": c.id,
 			"exec":      execID,
-		}).Debug("The container process io streams closed")
+		}).Info("The container process io streams closed")
 		//This wait could be triggered before exec start which
 		//will get the exec's id, thus this assignment must after
 		//the exec exit, to make sure it get the exec's id.
@@ -92,7 +92,7 @@ func wait(ctx context.Context, s *service, c *container, execID string) (int32, 
 		c.exitTime = timeStamp
 
 		c.exitCh <- uint32(ret)
-		shimLog.WithField("container", c.id).Debug("The container status is StatusStopped")
+		shimLog.WithField("container", c.id).Info("The container status is StatusStopped")
 	} else {
 		execs.status = task.Status_STOPPED
 		execs.exitCode = ret
@@ -102,7 +102,7 @@ func wait(ctx context.Context, s *service, c *container, execID string) (int32, 
 		shimLog.WithFields(logrus.Fields{
 			"container": c.id,
 			"exec":      execID,
-		}).Debug("The container exec status is StatusStopped")
+		}).Info("The container exec status is StatusStopped")
 	}
 	s.mu.Unlock()
 
@@ -142,7 +142,7 @@ func watchSandbox(ctx context.Context, s *service) {
 			continue
 		}
 		rootfs := path.Join(c.bundle, "rootfs")
-		shimLog.WithField("rootfs", rootfs).WithField("container", c.id).Debug("container umount rootfs")
+		shimLog.WithField("rootfs", rootfs).WithField("container", c.id).Info("container umount rootfs")
 		if err := mount.UnmountAll(rootfs, 0); err != nil {
 			shimLog.WithError(err).Warn("failed to cleanup rootfs mount")
 		}
