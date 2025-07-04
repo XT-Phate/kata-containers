@@ -100,6 +100,7 @@ func startContainer(ctx context.Context, s *service, c *container) (retErr error
 }
 
 func startExec(ctx context.Context, s *service, containerID, execID string) (e *exec, retErr error) {
+	shimLog.Error("START EXEC CALLED")
 	shimLog.WithFields(logrus.Fields{
 		"container": containerID,
 		"exec":      execID,
@@ -142,7 +143,7 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 		return nil, err
 	}
 
-	execs.stdinPipe = stdin
+	execs.stdinPipe = &stdin
 
 	tty, err := newTtyIO(ctx, s.namespace, execs.id, execs.tty.stdin, execs.tty.stdout, execs.tty.stderr, execs.tty.terminal)
 	if err != nil {
