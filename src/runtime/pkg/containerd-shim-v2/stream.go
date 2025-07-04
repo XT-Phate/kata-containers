@@ -115,11 +115,11 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			// shimLog.Error("STDIN COPY BUFFER OVER")
 
 			if err != nil {
-				shimLog.Errorf("STDIN COPY BUFFER OVER", err.Error())
+				shimLog.Errorf("STDIN COPY BUFFER OVER :", err.Error())
 			}
 			// notify that we can close process's io safely.
-			shimLog.Error("Printing STDIN bytes %s", *p)
-			close(stdinCloser)
+			shimLog.Error("Printing STDIN bytes %s", string(*p))
+			//close(stdinCloser)
 			wg.Done()
 			shimLog.Error("stdin io stream copy exited")
 		}()
@@ -140,7 +140,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			// 	// close stdin to make the other routine stop
 			// 	tty.io.Stdin().Close()
 			// }
-			shimLog.Error("Printing OUT bytes %s", *p)
+			shimLog.Error("Printing OUT bytes %s", string(*p))
 			wg.Done()
 			shimLog.Error("stdout io stream copy exited")
 		}()
@@ -156,13 +156,14 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			if err != nil {
 				shimLog.Errorf("STDERR COPY BUFFER OVER : ", err.Error())
 			}
-			shimLog.Error("Printing ERR bytes %s", *p)
+			shimLog.Error("Printing ERR bytes %s", string(*p))
 			wg.Done()
 			shimLog.Error("stderr io stream copy exited")
 		}()
 	}
 
 	wg.Wait()
+	close(stdinCloser)
 	tty.close()
 	close(exitch)
 	shimLog.Error("all io stream copy goroutines exited")
