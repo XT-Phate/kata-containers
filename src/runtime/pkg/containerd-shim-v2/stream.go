@@ -112,7 +112,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			defer bufPool.Put(p)
 			io.CopyBuffer(stdinPipe, tty.io.Stdin(), *p)
 			// notify that we can close process's io safely.
-			// close(stdinCloser)
+			close(stdinCloser)
 			wg.Done()
 			shimLog.Warn("stdin io stream copy exited")
 		}()
