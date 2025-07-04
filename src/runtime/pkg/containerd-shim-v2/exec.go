@@ -128,7 +128,7 @@ func newExec(c *container, stdin, stdout, stderr string, terminal bool, jspec *a
 		exitCh:      make(chan uint32, 1),
 		status:      task.Status_CREATED,
 	}
-
+	shimLog.Warn("TOTO22 NEWEXEC")
 	return exec, nil
 }
 
