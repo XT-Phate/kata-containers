@@ -107,14 +107,14 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 	if tty.io.Stdin() != nil {
 		wg.Add(1)
 		go func() {
-			shimLog.Info("stdin io stream copy started")
+			shimLog.Warn("stdin io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 			io.CopyBuffer(stdinPipe, tty.io.Stdin(), *p)
 			// notify that we can close process's io safely.
-			close(stdinCloser)
+			// close(stdinCloser)
 			wg.Done()
-			shimLog.Info("stdin io stream copy exited")
+			shimLog.Warn("stdin io stream copy exited")
 		}()
 	}
 
@@ -122,7 +122,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 		wg.Add(1)
 
 		go func() {
-			shimLog.Info("stdout io stream copy started")
+			shimLog.Warn("stdout io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 			io.CopyBuffer(tty.io.Stdout(), stdoutPipe, *p)
@@ -131,26 +131,26 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 				tty.io.Stdin().Close()
 			}
 			wg.Done()
-			shimLog.Info("stdout io stream copy exited")
+			shimLog.Warn("stdout io stream copy exited")
 		}()
 	}
 
 	if tty.io.Stderr() != nil && stderrPipe != nil {
 		wg.Add(1)
 		go func() {
-			shimLog.Info("stderr io stream copy started")
+			shimLog.Warn("stderr io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 			io.CopyBuffer(tty.io.Stderr(), stderrPipe, *p)
 			wg.Done()
-			shimLog.Info("stderr io stream copy exited")
+			shimLog.Warn("stderr io stream copy exited")
 		}()
 	}
 
 	wg.Wait()
 	tty.close()
 	close(exitch)
-	shimLog.Info("all io stream copy goroutines exited")
+	shimLog.Warn("all io stream copy goroutines exited")
 }
 
 func wc(w io.WriteCloser) error {
