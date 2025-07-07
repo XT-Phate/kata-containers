@@ -29,8 +29,10 @@ type exec struct {
 
 	exitTime time.Time
 
-	exitIOch    chan struct{}
-	stdinCloser chan struct{}
+	exitIOch     chan struct{}
+	stdinCloser  chan struct{}
+	stdoutCloser chan struct{}
+	stderrCloser chan struct{}
 
 	exitCh chan uint32
 

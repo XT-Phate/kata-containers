@@ -898,7 +898,8 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 
 	stdin := c.stdinPipe
 	stdinCloser := c.stdinCloser
-
+	// stderrCloser := c.stdoutCloser
+	// stdoutCloser := c.stderrCloser
 	if r.ExecID != "" {
 		execs, err := c.getExec(r.ExecID)
 		if err != nil {
@@ -910,7 +911,10 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 
 	// wait until the stdin io copy terminated, otherwise
 	// some contents would not be forwarded to the process.
+	shimLog.WithField("container", r.ID).Error("CLOSEIO WAITING")
 	<-stdinCloser
+	// <-stderrCloser
+	// <-stdoutCloser
 	if err := stdin.Close(); err != nil {
 		return nil, errors.Wrap(err, "close stdin")
 	}

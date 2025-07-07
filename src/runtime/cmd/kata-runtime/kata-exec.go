@@ -98,7 +98,7 @@ var kataExecCLICommand = cli.Command{
 
 func ioCopy(stream *iostream, con console.Console) {
 	var wg sync.WaitGroup
-
+	kataLog.Error("IOCOPY FROM KATA CLI")
 	// stdin
 	go func() {
 		p := bufPool.Get().(*[]byte)

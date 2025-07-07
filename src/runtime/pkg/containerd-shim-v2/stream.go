@@ -136,10 +136,10 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			if err != nil {
 				shimLog.Errorf("STDOUT COPY BUFFER OVER", err.Error())
 			}
-			// if tty.io.Stdin() != nil {
-			// 	// close stdin to make the other routine stop
-			// 	tty.io.Stdin().Close()
-			// }
+			if tty.io.Stdin() != nil {
+				// close stdin to make the other routine stop
+				tty.io.Stdin().Close()
+			}
 			shimLog.Error("Printing OUT bytes %s", string(*p))
 			wg.Done()
 			shimLog.Error("stdout io stream copy exited")
@@ -164,7 +164,9 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 
 	wg.Wait()
 	close(stdinCloser)
+	shimLog.Error("IOCOPY: STDIN CLOSED")
 	tty.close()
+	shimLog.Error("IOCOPY: CLOSED TTY")
 	close(exitch)
 	shimLog.Error("all io stream copy goroutines exited")
 }

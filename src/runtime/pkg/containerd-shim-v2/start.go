@@ -93,8 +93,9 @@ func startContainer(ctx context.Context, s *service, c *container) (retErr error
 		// io.
 		close(c.stdinCloser)
 	}
-
+	shimLog.WithError(err).Warnf("SO I AM, STILL WAITING %s", c.id)
 	go wait(ctx, s, c, "")
+	shimLog.WithError(err).Warnf("FINISHED WAITING %s", c.id)
 
 	return nil
 }
@@ -151,6 +152,7 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 	}
 	execs.ttyio = tty
 	shimLog.Error("IOCOPY STARTED")
+	shimLog.Errorf("IOCOPY STARTED STDIN : %s | STDOUT: %s", c.stdin, c.stdout)
 	go ioCopy(shimLog.WithFields(logrus.Fields{
 		"container": c.id,
 		"exec":      execID,
