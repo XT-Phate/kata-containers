@@ -157,7 +157,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser, stdoutCloser, stderrClos
 
 	wg.Wait()
 	tty.close()
-	// close(exitch)
+	close(exitch)
 	shimLog.Debug("all io stream copy goroutines exited")
 }
 
