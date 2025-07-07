@@ -899,6 +899,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	stdin := c.stdinPipe
 	stdinCloser := c.stdinCloser
 
+	var stdOutCloser, stdErrCloser chan struct{}
 	if r.ExecID != "" {
 		execs, err := c.getExec(r.ExecID)
 		if err != nil {
@@ -906,6 +907,8 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		}
 		stdin = execs.stdinPipe
 		stdinCloser = execs.stdinCloser
+		stdOutCloser = execs.stdoutCloser
+		stdErrCloser = execs.stderrCloser
 	}
 
 	// wait until the stdin io copy terminated, otherwise
@@ -915,6 +918,10 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		return nil, errors.Wrap(err, "close stdin")
 	}
 
+	if r.ExecID != "" {
+		<-stdOutCloser
+		<-stdErrCloser
+	}
 	return empty, nil
 }
 

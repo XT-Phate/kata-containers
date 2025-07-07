@@ -29,8 +29,10 @@ type exec struct {
 
 	exitTime time.Time
 
-	exitIOch    chan struct{}
-	stdinCloser chan struct{}
+	exitIOch     chan struct{}
+	stdinCloser  chan struct{}
+	stdoutCloser chan struct{}
+	stderrCloser chan struct{}
 
 	exitCh chan uint32
 
@@ -119,14 +121,16 @@ func newExec(c *container, stdin, stdout, stderr string, terminal bool, jspec *a
 	}
 
 	exec := &exec{
-		container:   c,
-		cmds:        cmds,
-		tty:         tty,
-		exitCode:    exitCode255,
-		exitIOch:    make(chan struct{}),
-		stdinCloser: make(chan struct{}),
-		exitCh:      make(chan uint32, 1),
-		status:      task.Status_CREATED,
+		container:    c,
+		cmds:         cmds,
+		tty:          tty,
+		exitCode:     exitCode255,
+		exitIOch:     make(chan struct{}),
+		stdinCloser:  make(chan struct{}),
+		stdoutCloser: make(chan struct{}),
+		stderrCloser: make(chan struct{}),
+		exitCh:       make(chan uint32, 1),
+		status:       task.Status_CREATED,
 	}
 
 	return exec, nil
