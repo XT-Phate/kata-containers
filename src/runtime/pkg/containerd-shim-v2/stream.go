@@ -110,7 +110,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			shimLog.Debug("stdin io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
-			io.CopyBuffer(stdinPipe, tty.io.Stdin())
+			io.Copy(stdinPipe, tty.io.Stdin())
 			wg.Done()
 			shimLog.Debug("stdin io stream copy exited")
 		}()
