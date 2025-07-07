@@ -163,7 +163,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 	}
 
 	wg.Wait()
-	close(stdinCloser)
+	//close(stdinCloser)
 	shimLog.Error("IOCOPY: STDIN CLOSED")
 	tty.close()
 	shimLog.Error("IOCOPY: CLOSED TTY")
