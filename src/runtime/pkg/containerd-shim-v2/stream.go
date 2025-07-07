@@ -119,7 +119,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			}
 			// notify that we can close process's io safely.
 			shimLog.Error("Printing STDIN bytes %s", string(*p))
-			//close(stdinCloser)
+			close(stdinCloser)
 			wg.Done()
 			shimLog.Error("stdin io stream copy exited")
 		}()

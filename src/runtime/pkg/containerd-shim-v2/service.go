@@ -915,6 +915,8 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	<-stdinCloser
 	// <-stderrCloser
 	// <-stdoutCloser
+	shimLog.WithField("container", r.ID).Error("CLOSEIO OVER")
+
 	if err := stdin.Close(); err != nil {
 		return nil, errors.Wrap(err, "close stdin")
 	}
