@@ -165,9 +165,9 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 	wg.Wait()
 	shimLog.Error("IOCOPY: STDIN CLOSED")
 	tty.close()
-	close(stdinCloser)
 	shimLog.Error("IOCOPY: CLOSED TTY")
 	close(exitch)
+	close(stdinCloser)
 	shimLog.Error("all io stream copy goroutines exited")
 }
 
