@@ -584,6 +584,8 @@ func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *e
 
 	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec STARTED : %s" + r.ExecID)
 	s.mu.Lock()
+	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec ACQUIRED : %s" + r.ExecID)
+
 	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
@@ -914,7 +916,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		}
 		stdin = execs.stdinPipe
 		stdinCloser = execs.stdinCloser
-		shimLog.WithField("exec-id", r.ExecID).Warnf("EXECID IS %s", execs.id)
+		shimLog.WithField("exec-id", r.ExecID).Warnf("EXECID IS %s", r.ExecID)
 	}
 
 	// wait until the stdin io copy terminated, otherwise
