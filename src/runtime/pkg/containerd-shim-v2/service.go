@@ -862,7 +862,7 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 		}).Debug("process has already stopped")
 		return empty, nil
 	}
-	shimLog.Warn("Check Porcesses LOCK RELEASED")
+	shimLog.Warn("Kill LOCK RELEASED")
 
 	return empty, s.sandbox.SignalProcess(spanCtx, c.id, processID, signum, r.All)
 }
@@ -1092,7 +1092,7 @@ func (s *service) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (_ *
 	if err != nil {
 		return nil, errdefs.ToGRPC(err)
 	}
-	shimLog.Warn("Check Porcesses LOCK RELEASED")
+	shimLog.Warn("Update LOCK RELEASED")
 
 	return empty, nil
 }
