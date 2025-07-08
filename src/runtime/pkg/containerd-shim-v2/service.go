@@ -475,6 +475,7 @@ func (s *service) Start(ctx context.Context, r *taskAPI.StartRequest) (_ *taskAP
 	}()
 
 	s.mu.Lock()
+	shimLog.Warn("START LOCK ACQUIRED")
 	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
@@ -498,7 +499,9 @@ func (s *service) Start(ctx context.Context, r *taskAPI.StartRequest) (_ *taskAP
 		})
 	} else {
 		//start an exec
+		shimLog.WithField("exec-id", r.ExecID).Warn("Start : Running STARTEXEC START")
 		_, err = startExec(spanCtx, s, r.ID, r.ExecID)
+		shimLog.WithField("exec-id", r.ExecID).Warn("Start : Running STARTEXEC END")
 		if err != nil {
 			return nil, errdefs.ToGRPC(err)
 		}
@@ -509,6 +512,7 @@ func (s *service) Start(ctx context.Context, r *taskAPI.StartRequest) (_ *taskAP
 		})
 	}
 
+	shimLog.Warn("START LOCK RELEASED")
 	return &taskAPI.StartResponse{
 		Pid: s.hpid,
 	}, nil
@@ -528,7 +532,10 @@ func (s *service) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (_ *task
 	}()
 
 	s.mu.Lock()
+	shimLog.Warn("DELETE LOCK ACQUIRED")
+
 	defer s.mu.Unlock()
+	shimLog.Warn("DELETE LOCK RELEASED")
 
 	c, err := s.getContainer(r.ID)
 	if err != nil {
@@ -808,6 +815,8 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 	}()
 
 	s.mu.Lock()
+	shimLog.Warn("Kill LOCK ACQUIRED")
+
 	defer s.mu.Unlock()
 
 	signum := syscall.Signal(r.Signal)
@@ -853,6 +862,7 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 		}).Debug("process has already stopped")
 		return empty, nil
 	}
+	shimLog.Warn("Check Porcesses LOCK RELEASED")
 
 	return empty, s.sandbox.SignalProcess(spanCtx, c.id, processID, signum, r.All)
 }
@@ -899,6 +909,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	}()
 
 	s.mu.Lock()
+	shimLog.Warn("CLOSE IO : LOCK ACQUIRED")
 	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
@@ -945,6 +956,7 @@ func (s *service) Checkpoint(ctx context.Context, r *taskAPI.CheckpointTaskReque
 		rpcDurationsHistogram.WithLabelValues("checkpoint").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
 
+	shimLog.Warn("CLOSE IO LOCK RELEASED")
 	return nil, errdefs.ToGRPCf(errdefs.ErrNotImplemented, "service Checkpoint")
 }
 
@@ -960,9 +972,11 @@ func (s *service) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (_ *ta
 		err = toGRPC(err)
 		rpcDurationsHistogram.WithLabelValues("connect").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
+	shimLog.Warn("Connect LOCK ACQUIRED")
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	shimLog.Warn("Connect LOCK REAleased")
 
 	return &taskAPI.ConnectResponse{
 		ShimPid: s.pid,
@@ -1059,6 +1073,7 @@ func (s *service) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (_ *
 		err = toGRPC(err)
 		rpcDurationsHistogram.WithLabelValues("update").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
+	shimLog.Warn("Update LOCK ACQUIRED")
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1077,6 +1092,7 @@ func (s *service) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (_ *
 	if err != nil {
 		return nil, errdefs.ToGRPC(err)
 	}
+	shimLog.Warn("Check Porcesses LOCK RELEASED")
 
 	return empty, nil
 }
@@ -1096,10 +1112,12 @@ func (s *service) Wait(ctx context.Context, r *taskAPI.WaitRequest) (_ *taskAPI.
 		rpcDurationsHistogram.WithLabelValues("wait").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
 
+	shimLog.Warn("Service Wait LOCK ACQUIRED")
 	s.mu.Lock()
 	c, err := s.getContainer(r.ID)
 	s.mu.Unlock()
 
+	shimLog.Warn("Service Wait LOCK ACQUIRED")
 	if err != nil {
 		return nil, err
 	}
@@ -1137,6 +1155,8 @@ func (s *service) processExits() {
 
 func (s *service) checkProcesses(e exit) {
 	s.mu.Lock()
+
+	shimLog.Warn("Check Porcesses LOCK ACQUIRED")
 	defer s.mu.Unlock()
 
 	id := e.execid
@@ -1160,6 +1180,7 @@ func (s *service) getContainer(id string) (*container, error) {
 		return nil, errdefs.ToGRPCf(errdefs.ErrNotFound, "container does not exist %s", id)
 	}
 
+	shimLog.Warn("Check Porcesses LOCK RELEASED")
 	return c, nil
 }
 
