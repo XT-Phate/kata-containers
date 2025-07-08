@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	sysexec "os/exec"
+	"reflect"
 	goruntime "runtime"
 	"sync"
 	"syscall"
@@ -577,6 +578,13 @@ func (s *service) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (_ *task
 	}, nil
 }
 
+const mutexLocked = 1
+
+func MutexLocked(m *sync.Mutex) bool {
+	state := reflect.ValueOf(m).Elem().FieldByName("state")
+	return state.Int()&mutexLocked == mutexLocked
+}
+
 // Exec an additional process inside the container
 func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *emptypb.Empty, err error) {
 	shimLog.WithField("container", r.ID).Debug("Exec() start")
@@ -592,6 +600,7 @@ func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *e
 	}()
 
 	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec STARTED : %s" + r.ExecID)
+	shimLog.WithField("container", r.ID).Warnf("IS LOCK  BUSY : %t", MutexLocked(&s.mu))
 	s.mu.Lock()
 	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec ACQUIRED : %s" + r.ExecID)
 
