@@ -582,7 +582,7 @@ func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *e
 		err = toGRPC(err)
 	}()
 
-	shimLog.WithField("container", r.ID).Warnf("LOCK FOR Exec STARTED : %s" + r.ExecID)
+	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec STARTED : %s" + r.ExecID)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -594,19 +594,24 @@ func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *e
 	if execs := c.execs[r.ExecID]; execs != nil {
 		return nil, errdefs.ToGRPCf(errdefs.ErrAlreadyExists, "id %s", r.ExecID)
 	}
-
+	shimLog.WithField("container", r.ID).Warnf("SERVICE : Creating New exec START : %s " + r.ExecID)
 	execs, err := newExec(c, r.Stdin, r.Stdout, r.Stderr, r.Terminal, r.Spec)
 	if err != nil {
 		return nil, errdefs.ToGRPC(err)
 	}
+	shimLog.WithField("container", r.ID).Warnf("SERVICE : Creating New exec END : %s" + r.ExecID)
 
 	c.execs[r.ExecID] = execs
+
+	shimLog.WithField("container", r.ID).Warnf("SERVICE : Send START : %s " + r.ExecID)
 
 	s.send(&eventstypes.TaskExecAdded{
 		ContainerID: c.id,
 		ExecID:      r.ExecID,
 	})
-	shimLog.WithField("container", r.ID).Warnf("LOCK FOR Exec ENDED : %s" + r.ExecID)
+	shimLog.WithField("container", r.ID).Warnf("SERVICE :Send END : %s " + r.ExecID)
+
+	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec ENDED : %s" + r.ExecID)
 	return empty, nil
 }
 
