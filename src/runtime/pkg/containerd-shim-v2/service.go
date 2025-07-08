@@ -680,7 +680,6 @@ func (s *service) State(ctx context.Context, r *taskAPI.StateRequest) (_ *taskAP
 	}
 
 	if r.ExecID == "" {
-		"State with Exec LOCK Released")
 		return &taskAPI.StateResponse{
 			ID:         c.id,
 			Bundle:     c.bundle,
@@ -753,7 +752,6 @@ func (s *service) Pause(ctx context.Context, r *taskAPI.PauseRequest) (_ *emptyp
 		c.status = status
 	}
 
-	"Paused with Exec LOCK RELEASED")
 	return empty, err
 }
 
@@ -835,7 +833,6 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 				"exec-id":   r.ExecID,
 			}).Debug("Id of exec process to be signalled is empty")
 
-			"RESUME LOCK Released")
 			return empty, errors.New("The exec process does not exist")
 		}
 		processStatus = execs.status
@@ -858,7 +855,6 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 		}).Debug("process has already stopped")
 		return empty, nil
 	}
-	"Kill LOCK RELEASED")
 
 	return empty, s.sandbox.SignalProcess(spanCtx, c.id, processID, signum, r.All)
 }
@@ -949,7 +945,6 @@ func (s *service) Checkpoint(ctx context.Context, r *taskAPI.CheckpointTaskReque
 		rpcDurationsHistogram.WithLabelValues("checkpoint").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
 
-	"CLOSE IO LOCK RELEASED")
 	return nil, errdefs.ToGRPCf(errdefs.ErrNotImplemented, "service Checkpoint")
 }
 
@@ -965,11 +960,9 @@ func (s *service) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (_ *ta
 		err = toGRPC(err)
 		rpcDurationsHistogram.WithLabelValues("connect").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
-	"Connect LOCK ACQUIRED")
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	"Connect LOCK REAleased")
 
 	return &taskAPI.ConnectResponse{
 		ShimPid: s.pid,
@@ -1066,7 +1059,6 @@ func (s *service) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (_ *
 		err = toGRPC(err)
 		rpcDurationsHistogram.WithLabelValues("update").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
-	"Update LOCK ACQUIRED")
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1085,7 +1077,6 @@ func (s *service) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (_ *
 	if err != nil {
 		return nil, errdefs.ToGRPC(err)
 	}
-	"Update LOCK RELEASED")
 
 	return empty, nil
 }
@@ -1106,11 +1097,9 @@ func (s *service) Wait(ctx context.Context, r *taskAPI.WaitRequest) (_ *taskAPI.
 	}()
 
 	s.mu.Lock()
-	"Service Wait LOCK ACQUIRED")
 	c, err := s.getContainer(r.ID)
 	s.mu.Unlock()
 
-	"Service Wait LOCK ACQUIRED")
 	if err != nil {
 		return nil, err
 	}
@@ -1149,7 +1138,6 @@ func (s *service) processExits() {
 func (s *service) checkProcesses(e exit) {
 	s.mu.Lock()
 
-	"Check Porcesses LOCK ACQUIRED")
 	defer s.mu.Unlock()
 
 	id := e.execid
@@ -1164,7 +1152,6 @@ func (s *service) checkProcesses(e exit) {
 		ExitStatus:  uint32(e.status),
 		ExitedAt:    timestamppb.New(e.timestamp),
 	})
-	"Check Porcesses LOCK RELEASED")
 }
 
 func (s *service) getContainer(id string) (*container, error) {
