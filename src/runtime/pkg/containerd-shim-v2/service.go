@@ -900,6 +900,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	}()
 
 	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
 	if err != nil {
@@ -920,15 +921,19 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		stdin = c.stdinPipe
 		stdinCloser = c.stdinCloser
 	}
-	s.mu.Unlock()
+
+	return s.waitForEndedProcess(stdin, stdinCloser)
+}
+
+func (s *service) waitForEndedProcess(std io.WriteCloser, stdCloser <-chan struct{}) (_ *emptypb.Empty, err error) {
 	// wait until the stdin io copy terminated, otherwise
 	// some contents would not be forwarded to the process.
-	<-stdinCloser
+	shimLog.Warn(fmt.Sprintf("IS LOCK LOCKED : %t", MutexLocked(&s.mu)))
+	<-stdCloser
 
-	if err := stdin.Close(); err != nil {
+	if err := std.Close(); err != nil {
 		return nil, errors.Wrap(err, "close stdin")
 	}
-
 	return empty, nil
 }
 
