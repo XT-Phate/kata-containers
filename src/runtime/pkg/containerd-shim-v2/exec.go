@@ -124,7 +124,7 @@ func newExec(c *container, stdin, stdout, stderr string, terminal bool, jspec *a
 		tty:         tty,
 		exitCode:    exitCode255,
 		exitIOch:    make(chan struct{}),
-		stdinCloser: make(chan struct{}),
+		stdinCloser: make(map[string]chan struct{}),
 		exitCh:      make(chan uint32, 1),
 		status:      task.Status_CREATED,
 	}

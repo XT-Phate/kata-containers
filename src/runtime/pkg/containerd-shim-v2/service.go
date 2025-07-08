@@ -906,11 +906,15 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		}
 		stdin = execs.stdinPipe
 		stdinCloser = execs.stdinCloser
+		shimLog.WithField("exec-id", r.ExecID).Warnf("EXECID IS %s", execs.id)
 	}
 
 	// wait until the stdin io copy terminated, otherwise
 	// some contents would not be forwarded to the process.
+	shimLog.WithField("exec-id", r.ExecID).Warnf("WAITING FOR EXECID : %s", r.ExecID)
 	<-stdinCloser
+	shimLog.WithField("exec-id", r.ExecID).Warnf("CLOSED FOR EXECID : %s", r.ExecID)
+
 	if err := stdin.Close(); err != nil {
 		return nil, errors.Wrap(err, "close stdin")
 	}

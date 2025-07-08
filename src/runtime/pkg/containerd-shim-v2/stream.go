@@ -124,7 +124,10 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 			io.CopyBuffer(tty.io.Stdout(), stdoutPipe, *p)
-			if tty.io.Stdin() != nil {
+			// Only close stdin if it was actually requested/provided and is not empty
+			// This prevents premature closure for exec without -i option while still
+			// allowing proper cleanup for interactive sessions
+			if tty.io.Stdin() != nil && tty.raw.Stdin != "" {
 				// close stdin to make the other routine stop
 				tty.io.Stdin().Close()
 			}
