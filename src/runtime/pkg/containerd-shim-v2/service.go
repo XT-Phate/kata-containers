@@ -915,6 +915,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	// some contents would not be forwarded to the process.
 	<-stdinCloser
 	if err := stdin.Close(); err != nil {
+		shimLog.Warn("HEEEEEY failed to close stdin pipe")
 		return nil, errors.Wrap(err, "close stdin")
 	}
 
