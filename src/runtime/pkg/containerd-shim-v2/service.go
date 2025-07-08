@@ -889,15 +889,14 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	}()
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	stdin := c.stdinPipe
-	stdinCloser := c.stdinCloser
+	var stdin io.WriteCloser
+	var stdinCloser <-chan struct{}
 
 	if r.ExecID != "" {
 		execs, err := c.getExec(r.ExecID)
@@ -906,7 +905,11 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		}
 		stdin = execs.stdinPipe
 		stdinCloser = execs.stdinCloser
+	} else {
+		stdin = c.stdinPipe
+		stdinCloser = c.stdinCloser
 	}
+	s.mu.Unlock()
 
 	// wait until the stdin io copy terminated, otherwise
 	// some contents would not be forwarded to the process.
