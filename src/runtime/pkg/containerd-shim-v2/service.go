@@ -314,7 +314,6 @@ func (s *service) sendL(evt interface{}) {
 	if s.events != nil {
 		s.events <- evt
 	}
-	shimLog.Warn("UNLOCK sendL")
 	s.eventSendMu.Unlock()
 }
 
@@ -433,7 +432,6 @@ func (s *service) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (_ *
 
 	select {
 	case <-ctx.Done():
-		shimLog.Warn("UNCLOCK CREATE")
 		return nil, errors.Errorf("create container timeout: %v", r.ID)
 	case res := <-ch:
 		if res.err != nil {
@@ -457,7 +455,6 @@ func (s *service) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (_ *
 			Checkpoint: r.Checkpoint,
 			Pid:        s.hpid,
 		})
-		shimLog.Warn("UNLOCK CREATE")
 
 		return &taskAPI.CreateTaskResponse{
 			Pid: s.hpid,
@@ -479,7 +476,6 @@ func (s *service) Start(ctx context.Context, r *taskAPI.StartRequest) (_ *taskAP
 	}()
 
 	s.mu.Lock()
-	shimLog.Warn("START LOCK ACQUIRED")
 	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
@@ -503,9 +499,7 @@ func (s *service) Start(ctx context.Context, r *taskAPI.StartRequest) (_ *taskAP
 		})
 	} else {
 		//start an exec
-		shimLog.WithField("exec-id", r.ExecID).Warn("Start : Running STARTEXEC START")
 		_, err = startExec(spanCtx, s, r.ID, r.ExecID)
-		shimLog.WithField("exec-id", r.ExecID).Warn("Start : Running STARTEXEC END")
 		if err != nil {
 			return nil, errdefs.ToGRPC(err)
 		}
@@ -516,7 +510,6 @@ func (s *service) Start(ctx context.Context, r *taskAPI.StartRequest) (_ *taskAP
 		})
 	}
 
-	shimLog.Warn("START LOCK RELEASED")
 	return &taskAPI.StartResponse{
 		Pid: s.hpid,
 	}, nil
@@ -536,7 +529,6 @@ func (s *service) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (_ *task
 	}()
 
 	s.mu.Lock()
-	shimLog.Warn("DELETE LOCK ACQUIRED")
 
 	defer s.mu.Unlock()
 
@@ -571,7 +563,6 @@ func (s *service) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (_ *task
 
 	delete(c.execs, r.ExecID)
 
-	shimLog.Warn("DELETE LOCK RELEASED")
 	return &taskAPI.DeleteResponse{
 		ExitStatus: uint32(execs.exitCode),
 		ExitedAt:   timestamppb.New(execs.exitTime),
@@ -589,7 +580,6 @@ func MutexLocked(m *sync.Mutex) bool {
 // Exec an additional process inside the container
 func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *emptypb.Empty, err error) {
 	shimLog.WithField("container", r.ID).Debug("Exec() start")
-	shimLog.WithField("container", r.ID).Warn("SERVICE Exec() start")
 	defer shimLog.WithField("container", r.ID).Debug("Exec() end")
 	span, _ := katatrace.Trace(s.rootCtx, shimLog, "Exec", shimTracingTags)
 	defer span.End()
@@ -600,11 +590,7 @@ func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *e
 		err = toGRPC(err)
 	}()
 
-	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec STARTED : %s" + r.ExecID)
-	shimLog.WithField("container", r.ID).Warnf("IS LOCK  BUSY : %t", MutexLocked(&s.mu))
 	s.mu.Lock()
-	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec ACQUIRED : %s" + r.ExecID)
-
 	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
@@ -615,24 +601,19 @@ func (s *service) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (_ *e
 	if execs := c.execs[r.ExecID]; execs != nil {
 		return nil, errdefs.ToGRPCf(errdefs.ErrAlreadyExists, "id %s", r.ExecID)
 	}
-	shimLog.WithField("container", r.ID).Warnf("SERVICE : Creating New exec START : %s " + r.ExecID)
+
 	execs, err := newExec(c, r.Stdin, r.Stdout, r.Stderr, r.Terminal, r.Spec)
 	if err != nil {
 		return nil, errdefs.ToGRPC(err)
 	}
-	shimLog.WithField("container", r.ID).Warnf("SERVICE : Creating New exec END : %s" + r.ExecID)
 
 	c.execs[r.ExecID] = execs
-
-	shimLog.WithField("container", r.ID).Warnf("SERVICE : Send START : %s " + r.ExecID)
 
 	s.send(&eventstypes.TaskExecAdded{
 		ContainerID: c.id,
 		ExecID:      r.ExecID,
 	})
-	shimLog.WithField("container", r.ID).Warnf("SERVICE :Send END : %s " + r.ExecID)
 
-	shimLog.WithField("container", r.ID).Warnf("SERVICE : LOCK FOR Exec ENDED : %s" + r.ExecID)
 	return empty, nil
 }
 
@@ -674,7 +655,6 @@ func (s *service) ResizePty(ctx context.Context, r *taskAPI.ResizePtyRequest) (_
 		return nil, err
 	}
 
-	shimLog.Warn("PTY RESIZE LOCK RELEASED")
 	return empty, err
 }
 
@@ -700,7 +680,7 @@ func (s *service) State(ctx context.Context, r *taskAPI.StateRequest) (_ *taskAP
 	}
 
 	if r.ExecID == "" {
-		shimLog.Warn("State with Exec LOCK Released")
+		"State with Exec LOCK Released")
 		return &taskAPI.StateResponse{
 			ID:         c.id,
 			Bundle:     c.bundle,
@@ -715,14 +695,12 @@ func (s *service) State(ctx context.Context, r *taskAPI.StateRequest) (_ *taskAP
 		}, nil
 	}
 
-	shimLog.Warn("State with Exec LOCK ACQUIRED")
 	//deal with exec case
 	execs, err := c.getExec(r.ExecID)
 	if err != nil {
 		return nil, err
 	}
 
-	shimLog.Warn("State with Exec LOCK Released")
 	return &taskAPI.StateResponse{
 		ID:         execs.id,
 		Bundle:     c.bundle,
@@ -751,7 +729,6 @@ func (s *service) Pause(ctx context.Context, r *taskAPI.PauseRequest) (_ *emptyp
 	}()
 
 	s.mu.Lock()
-	shimLog.Warn("Paused with Exec LOCK ACQUIRED")
 	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
@@ -776,7 +753,7 @@ func (s *service) Pause(ctx context.Context, r *taskAPI.PauseRequest) (_ *emptyp
 		c.status = status
 	}
 
-	shimLog.Warn("Paused with Exec LOCK RELEASED")
+	"Paused with Exec LOCK RELEASED")
 	return empty, err
 }
 
@@ -816,7 +793,6 @@ func (s *service) Resume(ctx context.Context, r *taskAPI.ResumeRequest) (_ *empt
 		c.status = status
 	}
 
-	shimLog.Warn("RESUME LOCK Released")
 	return empty, err
 }
 
@@ -834,7 +810,6 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 	}()
 
 	s.mu.Lock()
-	shimLog.Warn("Kill LOCK ACQUIRED")
 
 	defer s.mu.Unlock()
 
@@ -860,7 +835,7 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 				"exec-id":   r.ExecID,
 			}).Debug("Id of exec process to be signalled is empty")
 
-			shimLog.Warn("RESUME LOCK Released")
+			"RESUME LOCK Released")
 			return empty, errors.New("The exec process does not exist")
 		}
 		processStatus = execs.status
@@ -883,7 +858,7 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 		}).Debug("process has already stopped")
 		return empty, nil
 	}
-	shimLog.Warn("Kill LOCK RELEASED")
+	"Kill LOCK RELEASED")
 
 	return empty, s.sandbox.SignalProcess(spanCtx, c.id, processID, signum, r.All)
 }
@@ -917,7 +892,6 @@ func (s *service) Pids(ctx context.Context, r *taskAPI.PidsRequest) (_ *taskAPI.
 
 // CloseIO of a process
 func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *emptypb.Empty, err error) {
-	shimLog.WithField("container", r.ID).Warn("CLOSE IO CALLED")
 	shimLog.WithField("container", r.ID).Debug("CloseIO() start")
 	defer shimLog.WithField("container", r.ID).Debug("CloseIO() end")
 	span, _ := katatrace.Trace(s.rootCtx, shimLog, "CloseIO", shimTracingTags)
@@ -930,7 +904,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	}()
 
 	s.mu.Lock()
-	shimLog.Warn("CLOSE IO : LOCK ACQUIRED")
+
 	c, err := s.getContainer(r.ID)
 	if err != nil {
 		return nil, err
@@ -946,7 +920,6 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		}
 		stdin = execs.stdinPipe
 		stdinCloser = execs.stdinCloser
-		shimLog.WithField("exec-id", r.ExecID).Warnf("EXECID IS %s", r.ExecID)
 	} else {
 		stdin = c.stdinPipe
 		stdinCloser = c.stdinCloser
@@ -954,9 +927,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	s.mu.Unlock()
 	// wait until the stdin io copy terminated, otherwise
 	// some contents would not be forwarded to the process.
-	shimLog.WithField("exec-id", r.ExecID).Warnf("WAITING FOR EXECID : %s", r.ExecID)
 	<-stdinCloser
-	shimLog.WithField("exec-id", r.ExecID).Warnf("CLOSED FOR EXECID : %s", r.ExecID)
 
 	if err := stdin.Close(); err != nil {
 		return nil, errors.Wrap(err, "close stdin")
@@ -978,7 +949,7 @@ func (s *service) Checkpoint(ctx context.Context, r *taskAPI.CheckpointTaskReque
 		rpcDurationsHistogram.WithLabelValues("checkpoint").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
 
-	shimLog.Warn("CLOSE IO LOCK RELEASED")
+	"CLOSE IO LOCK RELEASED")
 	return nil, errdefs.ToGRPCf(errdefs.ErrNotImplemented, "service Checkpoint")
 }
 
@@ -994,11 +965,11 @@ func (s *service) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (_ *ta
 		err = toGRPC(err)
 		rpcDurationsHistogram.WithLabelValues("connect").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
-	shimLog.Warn("Connect LOCK ACQUIRED")
+	"Connect LOCK ACQUIRED")
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	shimLog.Warn("Connect LOCK REAleased")
+	"Connect LOCK REAleased")
 
 	return &taskAPI.ConnectResponse{
 		ShimPid: s.pid,
@@ -1095,7 +1066,7 @@ func (s *service) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (_ *
 		err = toGRPC(err)
 		rpcDurationsHistogram.WithLabelValues("update").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
 	}()
-	shimLog.Warn("Update LOCK ACQUIRED")
+	"Update LOCK ACQUIRED")
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1114,7 +1085,7 @@ func (s *service) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (_ *
 	if err != nil {
 		return nil, errdefs.ToGRPC(err)
 	}
-	shimLog.Warn("Update LOCK RELEASED")
+	"Update LOCK RELEASED")
 
 	return empty, nil
 }
@@ -1135,11 +1106,11 @@ func (s *service) Wait(ctx context.Context, r *taskAPI.WaitRequest) (_ *taskAPI.
 	}()
 
 	s.mu.Lock()
-	shimLog.Warn("Service Wait LOCK ACQUIRED")
+	"Service Wait LOCK ACQUIRED")
 	c, err := s.getContainer(r.ID)
 	s.mu.Unlock()
 
-	shimLog.Warn("Service Wait LOCK ACQUIRED")
+	"Service Wait LOCK ACQUIRED")
 	if err != nil {
 		return nil, err
 	}
@@ -1178,7 +1149,7 @@ func (s *service) processExits() {
 func (s *service) checkProcesses(e exit) {
 	s.mu.Lock()
 
-	shimLog.Warn("Check Porcesses LOCK ACQUIRED")
+	"Check Porcesses LOCK ACQUIRED")
 	defer s.mu.Unlock()
 
 	id := e.execid
@@ -1193,7 +1164,7 @@ func (s *service) checkProcesses(e exit) {
 		ExitStatus:  uint32(e.status),
 		ExitedAt:    timestamppb.New(e.timestamp),
 	})
-	shimLog.Warn("Check Porcesses LOCK RELEASED")
+	"Check Porcesses LOCK RELEASED")
 }
 
 func (s *service) getContainer(id string) (*container, error) {
