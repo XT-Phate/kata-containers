@@ -52,7 +52,8 @@ type ttyIO struct {
 }
 
 func (tty *ttyIO) close() {
-	tty.io.Close()
+	err := tty.io.Close()
+	shimLog.Warnf("ttyIO close called, error: %s", err.Error())
 }
 
 // newTtyIO creates a new ttyIO struct.
