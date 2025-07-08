@@ -877,6 +877,7 @@ func (s *service) Pids(ctx context.Context, r *taskAPI.PidsRequest) (_ *taskAPI.
 
 // CloseIO of a process
 func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *emptypb.Empty, err error) {
+	shimLog.WithField("container", r.ID).Warn("CLOSE IO CALLED")
 	shimLog.WithField("container", r.ID).Debug("CloseIO() start")
 	defer shimLog.WithField("container", r.ID).Debug("CloseIO() end")
 	span, _ := katatrace.Trace(s.rootCtx, shimLog, "CloseIO", shimTracingTags)

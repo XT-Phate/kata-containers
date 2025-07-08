@@ -70,6 +70,8 @@ func getEnvs(envs []string) []types.EnvVar {
 }
 
 func newExec(c *container, stdin, stdout, stderr string, terminal bool, jspec *anypb.Any) (*exec, error) {
+	shimLog.Warn("newExec: NEW EXCEC CALLED")
+
 	var height uint32
 	var width uint32
 
@@ -128,6 +130,7 @@ func newExec(c *container, stdin, stdout, stderr string, terminal bool, jspec *a
 		exitCh:      make(chan uint32, 1),
 		status:      task.Status_CREATED,
 	}
+	shimLog.Warn("newExec: NEW EXCEC OVER")
 
 	return exec, nil
 }
