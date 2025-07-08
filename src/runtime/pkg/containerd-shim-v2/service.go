@@ -433,6 +433,7 @@ func (s *service) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (_ *
 
 	select {
 	case <-ctx.Done():
+		shimLog.Warn("UNCLOCK CREATE")
 		return nil, errors.Errorf("create container timeout: %v", r.ID)
 	case res := <-ch:
 		if res.err != nil {
@@ -456,7 +457,7 @@ func (s *service) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (_ *
 			Checkpoint: r.Checkpoint,
 			Pid:        s.hpid,
 		})
-		shimLog.Warn("UNLOCK CREATED")
+		shimLog.Warn("UNLOCK CREATE")
 
 		return &taskAPI.CreateTaskResponse{
 			Pid: s.hpid,
@@ -673,6 +674,7 @@ func (s *service) ResizePty(ctx context.Context, r *taskAPI.ResizePtyRequest) (_
 		return nil, err
 	}
 
+	shimLog.Warn("PTY RESIZE LOCK RELEASED")
 	return empty, err
 }
 
@@ -698,6 +700,7 @@ func (s *service) State(ctx context.Context, r *taskAPI.StateRequest) (_ *taskAP
 	}
 
 	if r.ExecID == "" {
+		shimLog.Warn("State with Exec LOCK Released")
 		return &taskAPI.StateResponse{
 			ID:         c.id,
 			Bundle:     c.bundle,
@@ -813,6 +816,7 @@ func (s *service) Resume(ctx context.Context, r *taskAPI.ResumeRequest) (_ *empt
 		c.status = status
 	}
 
+	shimLog.Warn("RESUME LOCK Released")
 	return empty, err
 }
 
@@ -855,6 +859,8 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 				"container": c.id,
 				"exec-id":   r.ExecID,
 			}).Debug("Id of exec process to be signalled is empty")
+
+			shimLog.Warn("RESUME LOCK Released")
 			return empty, errors.New("The exec process does not exist")
 		}
 		processStatus = execs.status
@@ -925,15 +931,13 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 
 	s.mu.Lock()
 	shimLog.Warn("CLOSE IO : LOCK ACQUIRED")
-	defer s.mu.Unlock()
-
 	c, err := s.getContainer(r.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	stdin := c.stdinPipe
-	stdinCloser := c.stdinCloser
+	var stdin io.WriteCloser
+	var stdinCloser <-chan struct{}
 
 	if r.ExecID != "" {
 		execs, err := c.getExec(r.ExecID)
@@ -943,8 +947,11 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		stdin = execs.stdinPipe
 		stdinCloser = execs.stdinCloser
 		shimLog.WithField("exec-id", r.ExecID).Warnf("EXECID IS %s", r.ExecID)
+	} else {
+		stdin = c.stdinPipe
+		stdinCloser = c.stdinCloser
 	}
-
+	s.mu.Unlock()
 	// wait until the stdin io copy terminated, otherwise
 	// some contents would not be forwarded to the process.
 	shimLog.WithField("exec-id", r.ExecID).Warnf("WAITING FOR EXECID : %s", r.ExecID)
