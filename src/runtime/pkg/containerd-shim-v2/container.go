@@ -27,6 +27,7 @@ type container struct {
 	stdinPipe   io.WriteCloser
 	stdinCloser chan struct{}
 	exitCh      chan uint32
+	stdioCloser chan struct{}
 	id          string
 	stdin       string
 	stdout      string
@@ -64,6 +65,7 @@ func newContainer(s *service, r *taskAPI.CreateTaskRequest, containerType vc.Con
 		exitIOch:    make(chan struct{}),
 		exitCh:      make(chan uint32, 1),
 		stdinCloser: make(chan struct{}),
+		stdioCloser: make(chan struct{}),
 		mounted:     mounted,
 	}
 	return c, nil

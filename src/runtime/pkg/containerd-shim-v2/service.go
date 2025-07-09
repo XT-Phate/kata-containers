@@ -900,7 +900,11 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	}()
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	defer func() {
+		if err != nil {
+			s.mu.Unlock()
+		}
+	}()
 
 	c, err := s.getContainer(r.ID)
 	if err != nil {
@@ -909,6 +913,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 
 	var stdin io.WriteCloser
 	var stdinCloser <-chan struct{}
+	var stdioCloser <-chan struct{}
 
 	if r.ExecID != "" {
 		execs, err := c.getExec(r.ExecID)
@@ -917,23 +922,22 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 		}
 		stdin = execs.stdinPipe
 		stdinCloser = execs.stdinCloser
+		stdioCloser = execs.stdioCloser
 	} else {
 		stdin = c.stdinPipe
 		stdinCloser = c.stdinCloser
+		stdioCloser = c.stdioCloser
 	}
 
-	return s.waitForEndedProcess(stdin, stdinCloser)
-}
-
-func (s *service) waitForEndedProcess(std io.WriteCloser, stdCloser <-chan struct{}) (_ *emptypb.Empty, err error) {
-	// wait until the stdin io copy terminated, otherwise
-	// some contents would not be forwarded to the process.
-	shimLog.Warn(fmt.Sprintf("IS LOCK LOCKED : %t", MutexLocked(&s.mu)))
-	<-stdCloser
-
-	if err := std.Close(); err != nil {
+	// Unlocking before the end as this is preventing
+	// the service to run other execs until it has answer the current call
+	s.mu.Unlock()
+	<-stdinCloser
+	if err := stdin.Close(); err != nil {
 		return nil, errors.Wrap(err, "close stdin")
 	}
+	<-stdioCloser
+
 	return empty, nil
 }
 
