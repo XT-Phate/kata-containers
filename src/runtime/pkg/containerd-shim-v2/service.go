@@ -901,7 +901,7 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*empt
 		return nil, err
 	}
 
-	var stdin io.WriteCloser
+	// var stdin io.WriteCloser
 	var stdinCloser <-chan struct{}
 	var stdioCloser <-chan struct{}
 
@@ -910,11 +910,11 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*empt
 		if err != nil {
 			return nil, err
 		}
-		stdin = execs.stdinPipe
+		// stdin = execs.stdinPipe
 		stdinCloser = execs.stdinCloser
 		stdioCloser = execs.stdioCloser
 	} else {
-		stdin = c.stdinPipe
+		// stdin = c.stdinPipe
 		stdinCloser = c.stdinCloser
 		stdioCloser = c.stdioCloser
 	}
@@ -923,9 +923,9 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*empt
 	// the service to run other execs until it has answer the current call
 	s.mu.Unlock()
 	<-stdinCloser
-	if err := stdin.Close(); err != nil {
-		return nil, errors.Wrap(err, "close stdin")
-	}
+	// if err := stdin.Close(); err != nil {
+	// 	return nil, errors.Wrap(err, "close stdin")
+	// }
 	<-stdioCloser
 
 	return empty, nil
