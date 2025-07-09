@@ -891,8 +891,9 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*empt
 	}()
 
 	s.mu.Lock()
+	serviceMutexLocked := true
 	defer func() {
-		if err != nil {
+		if err != nil && serviceMutexLocked {
 			s.mu.Unlock()
 		}
 	}()
@@ -923,9 +924,12 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*empt
 	// Unlocking before the end as this is preventing
 	// the service to run other execs until it has answer the current call
 	s.mu.Unlock()
+	serviceMutexLocked = false
 	<-stdinCloser
 
-	if err := stdin.Close(); err != nil {
+	err = stdin.Close()
+	err = errors.Wrap(err, "TEST FORCED UNLOCK")
+	if err != nil {
 		// errors.Is(err, io.ErrClosedPipe) // ignore closed pipe error
 		return nil, errors.Wrap(err, "close stdin")
 	}
