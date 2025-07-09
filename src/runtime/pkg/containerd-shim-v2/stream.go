@@ -52,10 +52,7 @@ type ttyIO struct {
 }
 
 func (tty *ttyIO) close() {
-	err := tty.io.Close()
-	if err != nil {
-		shimLog.WithError(err).Warn("ttyIO close called, error")
-	}
+	tty.io.Close()
 }
 
 // newTtyIO creates a new ttyIO struct.
@@ -104,7 +101,7 @@ func newTtyIO(ctx context.Context, ns, id, stdin, stdout, stderr string, console
 	}, nil
 }
 
-func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO, stdinPipe io.WriteCloser, stdoutPipe, stderrPipe io.Reader) {
+func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser, stdioCloser chan struct{}, tty *ttyIO, stdinPipe io.WriteCloser, stdoutPipe, stderrPipe io.Reader) {
 	var wg sync.WaitGroup
 
 	if tty.io.Stdin() != nil {
@@ -129,10 +126,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 			io.CopyBuffer(tty.io.Stdout(), stdoutPipe, *p)
-			// Only close stdin if it was actually requested/provided and is not empty
-			// This prevents premature closure for exec without -i option while still
-			// allowing proper cleanup for interactive sessions
-			if tty.io.Stdin() != nil && tty.raw.Stdin != "" {
+			if tty.io.Stdin() != nil {
 				// close stdin to make the other routine stop
 				tty.io.Stdin().Close()
 			}
@@ -156,6 +150,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 	wg.Wait()
 	tty.close()
 	close(exitch)
+	close(stdioCloser)
 	shimLog.Debug("all io stream copy goroutines exited")
 }
 

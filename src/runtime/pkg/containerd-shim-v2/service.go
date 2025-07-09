@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	sysexec "os/exec"
-	"reflect"
 	goruntime "runtime"
 	"sync"
 	"syscall"
@@ -529,7 +528,6 @@ func (s *service) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (_ *task
 	}()
 
 	s.mu.Lock()
-
 	defer s.mu.Unlock()
 
 	c, err := s.getContainer(r.ID)
@@ -568,13 +566,6 @@ func (s *service) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (_ *task
 		ExitedAt:   timestamppb.New(execs.exitTime),
 		Pid:        s.hpid,
 	}, nil
-}
-
-const mutexLocked = 1
-
-func MutexLocked(m *sync.Mutex) bool {
-	state := reflect.ValueOf(m).Elem().FieldByName("state")
-	return state.Int()&mutexLocked == mutexLocked
 }
 
 // Exec an additional process inside the container
@@ -808,7 +799,6 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 	}()
 
 	s.mu.Lock()
-
 	defer s.mu.Unlock()
 
 	signum := syscall.Signal(r.Signal)
@@ -832,7 +822,6 @@ func (s *service) Kill(ctx context.Context, r *taskAPI.KillRequest) (_ *emptypb.
 				"container": c.id,
 				"exec-id":   r.ExecID,
 			}).Debug("Id of exec process to be signalled is empty")
-
 			return empty, errors.New("The exec process does not exist")
 		}
 		processStatus = execs.status
@@ -887,13 +876,14 @@ func (s *service) Pids(ctx context.Context, r *taskAPI.PidsRequest) (_ *taskAPI.
 }
 
 // CloseIO of a process
-func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *emptypb.Empty, err error) {
+func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*emptypb.Empty, error) {
 	shimLog.WithField("container", r.ID).Debug("CloseIO() start")
 	defer shimLog.WithField("container", r.ID).Debug("CloseIO() end")
 	span, _ := katatrace.Trace(s.rootCtx, shimLog, "CloseIO", shimTracingTags)
 	defer span.End()
 
 	start := time.Now()
+	var err error
 	defer func() {
 		err = toGRPC(err)
 		rpcDurationsHistogram.WithLabelValues("close_io").Observe(float64(time.Since(start).Nanoseconds() / int64(time.Millisecond)))
@@ -1146,7 +1136,6 @@ func (s *service) processExits() {
 
 func (s *service) checkProcesses(e exit) {
 	s.mu.Lock()
-
 	defer s.mu.Unlock()
 
 	id := e.execid
