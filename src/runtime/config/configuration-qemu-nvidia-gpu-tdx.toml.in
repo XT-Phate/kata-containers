@@ -12,7 +12,7 @@
 # XXX:   Type: @PROJECT_TYPE@
 
 [hypervisor.qemu]
-path = "@QEMUTDXPATH@"
+path = "@QEMUTDXEXPERIMENTALPATH@"
 kernel = "@KERNELPATH_CONFIDENTIAL_NV@"
 initrd = "@INITRDPATH_CONFIDENTIAL_NV@"
 
@@ -54,7 +54,7 @@ enable_annotations = @DEFENABLEANNOTATIONS@
 # Each member of the list is a path pattern as described by glob(3).
 # The default if not set is empty (all annotations rejected.)
 # Your distribution recommends: @QEMUVALIDHYPERVISORPATHS@
-valid_hypervisor_paths = @QEMUTDXVALIDHYPERVISORPATHS@
+valid_hypervisor_paths = @QEMUTDXEXPERIMENTALVALIDHYPERVISORPATHS@
 
 # Optional space-separated list of options to pass to the guest kernel.
 # For example, use `kernel_params = "vsyscall=emulate"` if you are having
@@ -204,6 +204,10 @@ virtio_fs_extra_args = @DEFVIRTIOFSEXTRAARGS@
 #  - never
 #    Metadata, data, and pathname lookup are not cached in guest. They are
 #    always fetched from host and any changes are immediately pushed to host.
+#
+#  - metadata
+#    Metadata and pathname lookup are cached in guest and never expire.
+#    Data is never cached in guest.
 #
 #  - auto
 #    Metadata and pathname lookup cache expires after a configured amount of
