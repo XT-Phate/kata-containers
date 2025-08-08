@@ -630,10 +630,13 @@ impl AgentService {
 
         // EOF of stdin
         if req.data.is_empty() {
+            info!(sl(), "PROCESS CLOSED IO, REQ DATA EMPTY");
             let mut sandbox = self.sandbox.lock().await;
             let p = sandbox.find_container_process(cid.as_str(), eid.as_str())?;
             p.close_stdin().await;
+            info!(sl(), "PROCESS CLOSED IO, REQ DATA EMPTY");
         } else {
+            info!(sl(), "PROCESS CLOSED IO, REQ DATA FULL");
             let writer = {
                 let mut sandbox = self.sandbox.lock().await;
                 let p = sandbox.find_container_process(cid.as_str(), eid.as_str())?;
@@ -649,8 +652,10 @@ impl AgentService {
 
             let writer = writer.ok_or_else(|| anyhow!(ERR_CANNOT_GET_WRITER))?;
             writer.lock().await.write_all(req.data.as_slice()).await?;
+            
+            info!(sl(), "FINISHED WRITING");
         }
-
+        info!(sl(), "DO WRITE STREAM OVER");
         Ok(resp)
     }
 
