@@ -56,7 +56,7 @@ func (s *iostream) stderr() io.Reader {
 
 func (s *stdinStream) Write(data []byte) (n int, err error) {
 	if s.closed {
-		return 0, errors.New("stream closed")
+		return 0, errors.New("STDIN WRITE : stream closed")
 	}
 
 	// can not pass context to Write(), so use background context
@@ -67,29 +67,32 @@ func (s *stdinStream) Close() error {
 	if s.closed {
 		return errors.New("stream closed")
 	}
-
+	s.container.Logger().Error("CLOSE STDIN : CALLED")
 	// can not pass context to Close(), so use background context
 	err := s.sandbox.agent.closeProcessStdin(context.Background(), s.container, s.process)
 	if err == nil {
+
 		s.closed = true
+		s.container.Logger().Error("S.CLOSED : DONE")
 	}
 
 	return err
 }
 
 func (s *stdoutStream) Read(data []byte) (n int, err error) {
-	if s.closed {
-		return 0, errors.New("stream closed")
-	}
+//	if s.closed {
+//		return 0, errors.New("STDOUT READ : stream closed")
+//	}
 
+	s.container.Logger().Error("READING DATA STDOUT")
 	// can not pass context to Read(), so use background context
 	return s.sandbox.agent.readProcessStdout(context.Background(), s.container, s.process, data)
 }
 
 func (s *stderrStream) Read(data []byte) (n int, err error) {
-	if s.closed {
-		return 0, errors.New("stream closed")
-	}
+//	if s.closed {
+//		return 0, errors.New("STDERR READ: stream closed")
+//	}
 
 	// can not pass context to Read(), so use background context
 	return s.sandbox.agent.readProcessStderr(context.Background(), s.container, s.process, data)

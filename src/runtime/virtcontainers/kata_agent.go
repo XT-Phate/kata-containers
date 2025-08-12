@@ -2432,6 +2432,7 @@ func (k *kataAgent) sendReq(spanCtx context.Context, request interface{}) (inter
 // readStdout and readStderr are special that we cannot differentiate them with the request types...
 func (k *kataAgent) readProcessStdout(ctx context.Context, c *Container, processID string, data []byte) (int, error) {
 	if err := k.connect(ctx); err != nil {
+		k.Logger().Errorf("DEEP 1 Failed to connect to agent: %v", err)
 		return 0, err
 	}
 	if !k.keepConn {
@@ -2464,6 +2465,7 @@ func (k *kataAgent) readProcessStream(containerID, processID string, data []byte
 		copy(data, resp.Data)
 		return len(resp.Data), nil
 	}
+	k.Logger().Errorf("DEEP 2 : Failed to read process stream: %v", err)
 	return 0, err
 }
 

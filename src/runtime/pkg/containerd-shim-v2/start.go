@@ -102,6 +102,7 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 		"container": containerID,
 		"exec":      execID,
 	}).Debug("start container execution")
+	shimLog.Errorf("EXEC for id %d", execID)
 	// start an exec
 	c, err := s.getContainer(containerID)
 	if err != nil {

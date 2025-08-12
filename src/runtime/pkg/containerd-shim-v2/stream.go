@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/url"
 	"sync"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -82,10 +81,13 @@ func newTtyIO(ctx context.Context, ns, id, stdin, stdout, stderr string, console
 
 	switch uri.Scheme {
 	case shimLogPluginFifo:
+		shimLog.Error("shimlog : fifo")
 		io, err = newPipeIO(ctx, raw)
 	case shimLogPluginBinary:
+		shimLog.Error("shimlog : binary")
 		io, err = newBinaryIO(ctx, ns, id, uri)
 	case shimLogPluginFile:
+	        shimLog.Error("shimplog : PLUGIN")
 		io, err = newFileIO(ctx, raw, uri)
 	default:
 		return nil, fmt.Errorf("unknown STDIO scheme %s", uri.Scheme)
@@ -103,7 +105,12 @@ func newTtyIO(ctx context.Context, ns, id, stdin, stdout, stderr string, console
 
 func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO, stdinPipe io.WriteCloser, stdoutPipe, stderrPipe io.Reader) {
 	var wg sync.WaitGroup
-
+	// Create the destination file
+//	dst, err := os.Create("/tmp/dest.txt")
+//	if err != nil {
+//		fmt.Println("Error creating destination file:", err)
+//		return
+//	}
 	if tty.io.Stdin() != nil {
 		wg.Add(1)
 		go func() {
@@ -125,11 +132,21 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			shimLog.Debug("stdout io stream copy started")
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
-			io.CopyBuffer(tty.io.Stdout(), stdoutPipe, *p)
-			if tty.io.Stdin() != nil {
-				// close stdin to make the other routine stop
-				tty.io.Stdin().Close()
+			_, err := io.CopyBuffer(tty.io.Stdout(), stdoutPipe, *p)
+			if err != nil {
+				shimLog.Errorf("STDOUT ERR: %v", err)
 			}
+			if tty.io.Stdin() != nil {
+				test := tty.io.Stdin()
+				shimLog.Errorf("stdin pipe addr: %p", &test)
+				// close stdin to make the other routine stop
+				 shimLog.Error("CLOSING TTY stdin")
+				err = tty.io.Stdin().Close()
+				if err != nil {
+					shimLog.Errorf("Err from stdin close %v", err)
+				}
+			}
+			shimLog.Error("STDOUT : FINITO")
 			wg.Done()
 			shimLog.Debug("stdout io stream copy exited")
 		}()
@@ -148,6 +165,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 	}
 
 	wg.Wait()
+	shimLog.Error("IO FINISHED")
 	tty.close()
 	close(exitch)
 	shimLog.Debug("all io stream copy goroutines exited")

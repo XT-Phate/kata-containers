@@ -911,9 +911,11 @@ func (s *service) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (_ *em
 	// wait until the stdin io copy terminated, otherwise
 	// some contents would not be forwarded to the process.
 	<-stdinCloser
+	shimLog.Errorf("stdin addr: %p", &stdin)
 	if err := stdin.Close(); err != nil {
 		return nil, errors.Wrap(err, "close stdin")
 	}
+	shimLog.Error("STDIN has been closed yeah yeah yeah")
 
 	return empty, nil
 }

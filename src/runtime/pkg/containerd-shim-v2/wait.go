@@ -30,13 +30,16 @@ func wait(ctx context.Context, s *service, c *container, execID string) (int32, 
 	if execID == "" {
 		//wait until the io closed, then wait the container
 		<-c.exitIOch
+		shimLog.Error("EXIT , SURE ? ")
 		shimLog.WithField("container", c.id).Debug("The container io streams closed")
 	} else {
 		execs, err = c.getExec(execID)
 		if err != nil {
 			return exitCode255, err
 		}
+		shimLog.Errorf("WAITING FOR EXIT. Execid %s", execID)
 		<-execs.exitIOch
+		shimLog.Error("EXIT BANG ")
 		shimLog.WithFields(logrus.Fields{
 			"container": c.id,
 			"exec":      execID,
@@ -46,8 +49,9 @@ func wait(ctx context.Context, s *service, c *container, execID string) (int32, 
 		//the exec exit, to make sure it get the exec's id.
 		processID = execs.id
 	}
-
+	shimLog.Errorf("WAITING FOR SBOX PROCESS ")
 	ret, err := s.sandbox.WaitProcess(ctx, c.id, processID)
+	shimLog.Errorf("SBOX has finished ")
 	if err != nil {
 		shimLog.WithError(err).WithFields(logrus.Fields{
 			"container": c.id,
