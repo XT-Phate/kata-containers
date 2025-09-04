@@ -104,6 +104,7 @@ func newTtyIO(ctx context.Context, ns, id, stdin, stdout, stderr string, console
 func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO, stdinPipe io.WriteCloser, stdoutPipe, stderrPipe io.Reader) {
 	var wg sync.WaitGroup
 
+	shimLog.Error("BEFORE STDIN CONDITION = nil")
 	if tty.io.Stdin() != nil {
 		wg.Add(1)
 		go func() {
@@ -117,7 +118,7 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 			if err != nil {
 				shimLog.WithError(err).Error("FAILED STDIN")
 			}
-			shimLog.WithError(err).Error("STDIN OVER")
+			shimLog.Error("STDIN OVER")
 			// notify that we can close process's io safely.
 			close(stdinCloser)
 			wg.Done()
