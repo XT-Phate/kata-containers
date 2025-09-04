@@ -56,9 +56,11 @@ func (s *iostream) stderr() io.Reader {
 
 func (s *stdinStream) Write(data []byte) (n int, err error) {
 	if s.closed {
+		s.container.Logger().Error("STDIN CLOSED")
 		return 0, errors.New("stream closed")
 	}
 
+	s.container.Logger().Error("STREAM NOT CLOSED. WRITE STDIN NOW")
 	// can not pass context to Write(), so use background context
 	return s.sandbox.agent.writeProcessStdin(context.Background(), s.container, s.process, data)
 }
