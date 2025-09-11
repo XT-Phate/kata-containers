@@ -9,6 +9,8 @@ import (
 	"context"
 	"errors"
 	"io"
+
+	"github.com/sirupsen/logrus"
 )
 
 type iostream struct {
@@ -55,6 +57,7 @@ func (s *iostream) stderr() io.Reader {
 }
 
 func (s *stdinStream) Write(data []byte) (n int, err error) {
+	s.container.Logger().Logger.SetLevel(logrus.WarnLevel)
 	if s.closed {
 		s.container.Logger().Error("STDIN CLOSED")
 		return 0, errors.New("stream closed")
