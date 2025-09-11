@@ -126,6 +126,7 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 		return nil, err
 	}
 	execs.id = proc.Token
+	shimLog.Errorf("TOTO: startExec : EnterContainer done. Container ID : %d  | Exec ID : %d | Command : %v ", containerID, execID, *execs.cmds)
 
 	execs.status = task.Status_RUNNING
 	if execs.tty.height != 0 && execs.tty.width != 0 {
@@ -138,6 +139,13 @@ func startExec(ctx context.Context, s *service, containerID, execID string) (e *
 	stdin, stdout, stderr, err := s.sandbox.IOStream(c.id, execs.id)
 	if err != nil {
 		return nil, err
+	}
+
+	if stdin == nil {
+		shimLog.Logger.Error("TOTO: START EXEC: STDIN is NIL")
+	}
+	if execs.tty.stdin == "" {
+		shimLog.Logger.Error("TOTO: START EXEC: exec.tty.STDIN is NIL")
 	}
 
 	execs.stdinPipe = stdin

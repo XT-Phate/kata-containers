@@ -447,6 +447,7 @@ func (s *Sandbox) IOStream(containerID, processID string) (io.WriteCloser, io.Re
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	s.Logger().Error("TOTO: IOStream : calling c.ioStream. Container ID : %d  | Process ID : %d ", containerID, processID)
 
 	return c.ioStream(processID)
 }
