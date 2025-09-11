@@ -103,7 +103,7 @@ func newTtyIO(ctx context.Context, ns, id, stdin, stdout, stderr string, console
 
 func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO, stdinPipe io.WriteCloser, stdoutPipe, stderrPipe io.Reader) {
 	var wg sync.WaitGroup
-
+	shimLog.Logger.SetLevel(logrus.DebugLevel)
 	shimLog.Error("BEFORE STDIN CONDITION = nil")
 	if tty.io.Stdin() != nil {
 		wg.Add(1)
