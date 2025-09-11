@@ -105,6 +105,9 @@ func ioCopy(shimLog *logrus.Entry, exitch, stdinCloser chan struct{}, tty *ttyIO
 	var wg sync.WaitGroup
 	shimLog.Logger.SetLevel(logrus.DebugLevel)
 	shimLog.Error("BEFORE STDIN CONDITION = nil")
+	if tty.io.Stdin() == nil {
+		shimLog.Error("STDIN IS NIL")
+	}
 	if tty.io.Stdin() != nil {
 		wg.Add(1)
 		go func() {
